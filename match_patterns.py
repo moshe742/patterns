@@ -2,34 +2,31 @@ from collections import defaultdict
 import re
 from time import time
 from concurrent import futures
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
 
 
-def find_pattern_regex(pattern, file_path):
-    res = []
-    with open(file_path, 'rb') as file:
-        bin_file = file.read()
-    for regex in re.finditer(pattern, bin_file):
-        res.append({'range': (hex(regex.start()), hex(regex.end())), 'regex': pattern, 'res': regex.group()})
+def find_pattern_regex(patterns, bin_file):
+    res = defaultdict(list)
+    for pattern in patterns:
+        for regex in re.finditer(pattern, bin_file):
+            res[pattern].append({'range': (hex(regex.start()), hex(regex.end())), 'regex': pattern, 'res': regex.group()})
     return res
 
 
-def find_pattern_fixed(pattern, file):
-    bin_pattern = bytes.fromhex(pattern)
+def find_pattern_fixed(patterns, file):
     res = defaultdict(list)
 
-    with open(file, 'rb') as file:
-        file = file.read()
-
-    idx = 0
-    while idx > -1:
-        idx = file.find(bin_pattern, idx)
-        if idx == -1:
-            break
-        res[pattern].append(hex(idx))
-        idx += 1
-    return res
+    for pattern in patterns:
+        bin_pattern = bytes.fromhex(pattern)
+        idx = 0
+        while idx > -1:
+            idx = file.find(bin_pattern, idx)
+            if idx == -1:
+                break
+            res[pattern].append(hex(idx))
+            idx += 1
+        return res
 
 
 def find_patterns(file_path, patterns, *args, **kwargs):
@@ -38,22 +35,20 @@ def find_patterns(file_path, patterns, *args, **kwargs):
 
     res = []
 
-    with ProcessPoolExecutor(2) as executor:
-        future_result = {executor.submit(find_pattern_regex, pattern, file_path): pattern for pattern in patterns['regex']}
-        future_result.update({executor.submit(find_pattern_fixed, pattern, file_path): pattern for pattern in patterns['fixed'].keys()})
+    with ThreadPoolExecutor(2) as executor:
+        future_result = [
+            executor.submit(find_pattern_regex, patterns['regex'], file),
+            executor.submit(find_pattern_fixed, patterns['fixed'], file),
+        ]
         for future in futures.as_completed(future_result):
             result = future.result()
             res.append(result)
-
-        # for pattern in executor.map(find_pattern_fixed, patterns['fixed'].keys()):
-        #     res[pattern] = pattern
 
     return res
 
 
 def main():
     path = '/home/moshen/debian-10.3.0-amd64-DVD-2.iso'
-    # path = '/home/moshen/Projects/cmake-master/Help/guide/tutorial/Step1/Step1_build/Tutorial'
     data = {
         'regex': [
             b'00\w{8}',
