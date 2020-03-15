@@ -15,7 +15,7 @@ hexadecimal binaries and on regex you should have the regex
 expressions
 
 ### Example input for the function
-file_path: '/home/username/file_to_check'
+file_path: '/home/username/file_to_check'  
 patterns: {  
     'fixed': ['5D00008000', '27051956'],  
     'regex': []  
@@ -27,6 +27,7 @@ patterns: {
 '27051956': 'uImage',  
 },  
 'regex': {}  
+}
 
 So calling the function is (assuming the above variable names):  
 from patterns import find_patterns
