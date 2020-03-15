@@ -18,7 +18,7 @@ expressions
 file_path: '/home/username/file_to_check'  
 patterns: {  
     'fixed': ['5D00008000', '27051956'],  
-    'regex': []  
+    'regex': [b'\x18\(o\x01']  
 }  
 or for patterns with dictionary  
 patterns: {  
@@ -26,7 +26,7 @@ patterns: {
 '5D00008000': 'lzma',  
 '27051956': 'uImage',  
 },  
-'regex': {}  
+'regex': {b'\x18\(o\x01'}  
 }
 
 So calling the function is (assuming the above variable names):  
