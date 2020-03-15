@@ -1,50 +1,6 @@
-from collections import defaultdict
-import re
 from time import time
-from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
-
-
-def find_pattern_regex(patterns, bin_file):
-    res = defaultdict(list)
-    for pattern in patterns:
-        for regex in re.finditer(pattern, bin_file):
-            res[pattern].append({'range': (hex(regex.start()), hex(regex.end())), 'regex': pattern, 'res': regex.group()})
-    return res
-
-
-def find_pattern_fixed(patterns, file):
-    res = defaultdict(list)
-
-    for pattern in patterns:
-        bin_pattern = bytes.fromhex(pattern)
-        idx = 0
-        while idx > -1:
-            idx = file.find(bin_pattern, idx)
-            if idx == -1:
-                break
-            res[pattern].append(hex(idx))
-            idx += 1
-        return res
-
-
-def find_patterns(file_path, patterns, *args, **kwargs):
-    with open(file_path, 'rb') as f:
-        file = f.read()
-
-    res = []
-
-    with ThreadPoolExecutor(2) as executor:
-        future_result = [
-            executor.submit(find_pattern_regex, patterns['regex'], file),
-            executor.submit(find_pattern_fixed, patterns['fixed'], file),
-        ]
-        for future in futures.as_completed(future_result):
-            result = future.result()
-            res.append(result)
-
-    return res
+from patterns import find_patterns
 
 
 def main():
